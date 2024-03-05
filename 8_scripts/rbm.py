@@ -156,13 +156,13 @@ def run(i,w,rad,J,size,net,n_it,alpha):
     
 
 
-w     = 44
-limit = 45
+w     = 0
+limit = 361
 pi    = math.pi
 size  = 14  
 net   = 'RBM'
-n_it  = 100
-alpha = 2 # RBM ansatz with alpha=10
+n_it  = 600
+alpha = 2 # RBM ansatz with alpha=2
 
 for i in range(w,limit):
     rad = math.radians(w)
