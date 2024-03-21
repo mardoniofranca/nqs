@@ -67,7 +67,7 @@ def operators(g,bond_operator,bond_color):
 
 
 
-def run(i,w,rad,J,size,net,n_it, learning_rate, stoch_rec, variat_st):
+def run(i,rad,J,size,net,n_it, learning_rate, stoch_rec, variat_st):
     
     PARAM                      = i
     
@@ -120,18 +120,20 @@ def run(i,w,rad,J,size,net,n_it, learning_rate, stoch_rec, variat_st):
     j1 = J[0]
     j2 = J[1]	
     
-    print(PARAM,w,j1,j2,structure_factor_gs,E_gs[0],np.mean(sf[-1:]),np.mean(energy[-1:]))
+    print(variat_st)
+
+    print(PARAM,j1,j2,structure_factor_gs,E_gs[0],np.mean(sf[-1:]),np.mean(energy[-1:]))
     
-    l = [PARAM,w,rad,j1,j2,structure_factor_gs,E_gs[0],np.mean(sf[-1:]),np.mean(energy[-1:])]
+    l = [PARAM,rad,j1,j2,structure_factor_gs,E_gs[0],np.mean(sf[-1:]),np.mean(energy[-1:])]
     
     v = []
     
     v.append(l)
         
-    df   = pd.DataFrame(v, columns=['i', 'w','rad','j1', 'j2', 'factor_e', 'exact_e_0', 'factor_c', 'calc_e_0'])
+    df   = pd.DataFrame(v, columns=['i', 'rad','j1', 'j2', 'factor_e', 'exact_e_0', 'factor_c', 'calc_e_0'])
     
     
-    param_file = "data/" + str(PARAM) + "_" + str(size) + "_" + str(n_it) + "_" + str(learning_rate) + "_" + str(stoch_rec) + "_" + str(variat_st) + "_" + str(net) + ".log"
+    param_file = "dt/" + str(PARAM) + "_" + str(size) + "_" + str(n_it) + "_" + str(learning_rate) + "_" + str(stoch_rec) + "_" + str(variat_st) + "_" + str(net) + ".csv"
     
     df.to_csv(param_file)
     
