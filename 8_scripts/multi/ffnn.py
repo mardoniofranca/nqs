@@ -106,7 +106,7 @@ def run(i,w,rad,J,size,net,n_it, learning_rate, stoch_rec, variat_st):
             structure_factor += (nk.operator.spin.sigmaz(hi, i)*nk.operator.spin.sigmaz(hi, j))*((-1)**(i-j))/size
             
     # Run the optimization protocol
-    param_file ="log/" + str(PARAM) + "_" + str(size) + "_" + str(n_it)
+    param_file = "data/" + str(PARAM) + "_" + str(size) + "_" + str(n_it) + "_" + str(learning_rate) + "_" + str(stoch_rec) + "_" + str(variat_st) + "_" + str(net) + ".log"
     gs.run(out=param_file, n_iter=n_it, obs={'Structure Factor': structure_factor})
     
     data=json.load(open(param_file + ".log"))
@@ -114,6 +114,80 @@ def run(i,w,rad,J,size,net,n_it, learning_rate, stoch_rec, variat_st):
     energy=data['Energy']['Mean']['real']
     sf=data['Structure Factor']['Mean']['real']
     
+    E_gs, ket_gs = nk.exact.lanczos_ed(op, compute_eigenvectors=True)
+    structure_factor_gs = (ket_gs.T.conj()@structure_factor.to_linear_operator()@ket_gs).real[0,0]
+
+    j1 = J[0]
+    j2 = J[1]	
+    
+    print(PARAM,w,j1,j2,structure_factor_gs,E_gs[0],np.mean(sf[-1:]),np.mean(energy[-1:]))
+    
+    l = [PARAM,w,rad,j1,j2,structure_factor_gs,E_gs[0],np.mean(sf[-1:]),np.mean(energy[-1:])]
+    
+    v = []
+    
+    v.append(l)
+        
+    df   = pd.DataFrame(v, columns=['i', 'w','rad','j1', 'j2', 'factor_e', 'exact_e_0', 'factor_c', 'calc_e_0'])
+    
+    
+    param_file = "data/" + str(PARAM) + "_" + str(size) + "_" + str(n_it) + "_" + str(learning_rate) + "_" + str(stoch_rec) + "_" + str(variat_st) + "_" + str(net) + ".log"
+    
+    df.to_csv(param_file)
+    
+    print(df) 
+
+
+
+def run_rbm(i,w,rad,J,size,net,n_it, learning_rate, stoch_rec, variat_st):
+    
+    PARAM                      = i
+    
+    g                          = graph(size)
+    
+    bond_operator, bond_color  = bonds(J)
+     
+    hi,op                      = operators(g,bond_operator,bond_color)
+
+    alpha                      = 2
+
+    model = nk.models.RBM(alpha=alpha)
+
+    
+    # We shall use an exchange Sampler which preserves the global magnetization (as this is a conserved quantity in the model)
+    sa = nk.sampler.MetropolisExchange(hilbert=hi, graph=g, d_max = 2)
+
+    # Construct the variational state
+    vs = nk.vqs.MCState(sa, model, n_samples=variat_st) #use model
+
+    # We choose a basic, albeit important, Optimizer: the Stochastic Gradient Descent
+    opt = nk.optimizer.Sgd(learning_rate=learning_rate)
+
+    # Stochastic Reconfiguration
+    sr = nk.optimizer.SR(diag_shift=stoch_rec)
+
+    # We can then specify a Variational Monte Carlo object, using the Hamiltonian, sampler and optimizers chosen.
+    # Note that we also specify the method to learn the parameters of the wave-function: here we choose the efficient
+    # Stochastic reconfiguration (Sr), here in an iterative setup
+    gs = nk.VMC(hamiltonian=op, optimizer=opt, variational_state=vs, preconditioner=sr) #use vs
+    
+    
+    # We need to specify the local operators as a matrix acting on a local Hilbert space 
+    sf = []
+    sites = []
+    structure_factor = nk.operator.LocalOperator(hi, dtype=complex)
+    for i in range(0, size):
+        for j in range(0, size):
+            structure_factor += (nk.operator.spin.sigmaz(hi, i)*nk.operator.spin.sigmaz(hi, j))*((-1)**(i-j))/size
+            
+    # Run the optimization protocol
+    param_file = "data/" + str(PARAM) + "_" + str(size) + "_" + str(n_it) + "_" + str(learning_rate) + "_" + str(stoch_rec) + "_" + str(variat_st) + "_" + str(net) + ".log"
+    gs.run(out=param_file, n_iter=n_it, obs={'Structure Factor': structure_factor})
+    
+    data=json.load(open(param_file + ".log"))
+    iters = data['Energy']['iters']
+    energy = data["Energy"]["Mean"]
+
     E_gs, ket_gs = nk.exact.lanczos_ed(op, compute_eigenvectors=True)
     structure_factor_gs = (ket_gs.T.conj()@structure_factor.to_linear_operator()@ket_gs).real[0,0]
 
